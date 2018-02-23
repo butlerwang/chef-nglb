@@ -1,0 +1,13 @@
+{
+  "Nodes": [
+    { "Name": "BGP-GZ-b-3oW", "IP": "106.48.48.66" },
+    { "Name": "BGP-GZ-b-3oc", "IP": "106.48.48.72" }
+  ],
+  "FailTimeout": "2s",
+  "Cron": "10s",
+  "Workers": 10,
+  "TargetFile": "/usr/local/nginx/conf/stream.conf",
+  "TestObject": "www.chinacache.com/images/logo.gif",
+  "FailTimes": 3,
+  "Comment": "THIS FILE IS CONTROL BY CHEF!"
+}

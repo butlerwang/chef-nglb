@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# <%= @name %> Start/Stop the <%= @name %> daemon.
+#
+# chkconfig: 2345 90 60
+# description: <%= @name %>
+# processname: <%= @name %>
+#
+
+### BEGIN INIT INFO
+# Provides:          Kiyor Cai
+# Required-Start:    $local_fs $network $syslog
+# Required-Stop:     $local_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# VERSION:           1.0
+### END INIT INFO
+
+
+PATH=/usr/local/bin:/usr/bin:/sbin:/bin:/usr/sbin
+export PATH
+me=`basename $0`
+
+[ -f /etc/sysconfig/${me} ] && . /etc/sysconfig/${me}
+pidfile=${PIDFILE-/var/run/${me}.pid}
+pidfile_real=${PIDFILE-/var/run/${me}-real.pid}
+agent=${PB_AGENT-/usr/local/bin/${me}}
+args=""
+test_args="-t"
+wrapper="/usr/local/bin/${me}-god"
+wrapperopts="-r / -n -p ${pidfile} -l /dev/null"
+RETVAL=0
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Determine if we can use the -p option to daemon, killproc, and status.
+# RHEL < 5 can't.
+if status | grep -q -- '-p' 2>/dev/null; then
+    daemonopts="--pidfile $pidfile"
+    pidopts="-p $pidfile"
+fi
+
+test() {
+	$agent $args $test_args
+}
+
+start() {
+    echo -n $"Starting ${me}: "
+	test
+	if [ $? -ne 0 ]; then
+		echo
+		exit 1
+	fi
+    daemon $daemonopts $wrapper $wrapperopts -- $agent $args
+    RETVAL=$?
+    echo
+	let pid=`cat $pidfile`+1
+	echo $pid > $pidfile_real
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping ${me}: "
+    kill -s 15 $(cat $pidfile_real 2>/dev/null) 2>/dev/null
+    killproc $pidopts $wrapper
+    RETVAL=$?
+    echo
+	[ $RETVAL = 0 ] && rm -f ${pidfile} ${pidfile_real}
+}
+
+restart() {
+	test
+	if [ $? -ne 0 ]; then
+		return 1
+	fi
+    stop
+    sleep 1
+    start
+}
+
+rh_status() {
+    status $pidopts $wrapper
+    RETVAL=$?
+    return $RETVAL
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+reload() {
+	echo -n $"Reloading $me: "
+	killproc -p ${pidfile_real} ${me} -HUP
+	echo
+}
+
+case "$1" in
+    start)
+        start
+    ;;
+    stop)
+        stop
+    ;;
+    restart)
+        restart
+    ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+    ;;
+    status)
+        rh_status
+    ;;
+    reload)
+        reload
+    ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|reload}"
+        exit 1
+esac
+
+exit $RETVAL

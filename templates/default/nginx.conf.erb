@@ -1,0 +1,17 @@
+user  nobody;
+worker_processes auto;
+worker_cpu_affinity auto;
+
+error_log  /var/log/nginx_error.log;
+
+worker_rlimit_nofile 100000;
+
+pid    logs/nginx.pid;
+
+events {
+  use epoll;
+  worker_connections  10240;
+  multi_accept on;
+}
+
+include stream.conf;

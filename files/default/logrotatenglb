@@ -1,0 +1,9 @@
+/var/log/nglb.log {
+  daily
+  rotate 2
+  missingok
+  notifempty
+  postrotate
+    /usr/bin/killall -HUP nglb
+  endscript
+}
